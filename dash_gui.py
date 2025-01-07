@@ -12,7 +12,7 @@ import os
 import csv
 
 # Initialize serial connection
-SERIAL_PORT = 'COM4' #'/dev/ttyUSB0'
+SERIAL_PORT = '/dev/ttyUSB0' #'COM4' #
 BAUD_RATE = 115200
 
 def get_time_now():
@@ -42,7 +42,6 @@ def create_new_save_folder():
     
     return file_path
 
-serial_data = {}
 def init_data():
     global log_path, time_start, serial_data
     print("Initing data")
@@ -135,7 +134,8 @@ def get_last_60_seconds(serial_data):
 
 def read_serial_data():
     """Reads and parses serial data."""
-    #global serial_data
+    global serial_data
+    
     try:
         print("Reading serial")
         ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
