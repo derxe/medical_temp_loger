@@ -12,7 +12,7 @@ import os
 import csv
 
 # Initialize serial connection
-SERIAL_PORT = '/dev/ttyUSB0'
+SERIAL_PORT = 'COM4' #'/dev/ttyUSB0'
 BAUD_RATE = 115200
 
 def get_time_now():
@@ -26,7 +26,7 @@ def create_new_save_folder():
     Returns the path to the log file.
     """
     # Get the current date
-    log_name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
+    log_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
     
     # Define the folder and file path
     folder_path = os.path.join("logs")
@@ -42,22 +42,24 @@ def create_new_save_folder():
     
     return file_path
 
-
+serial_data = {}
 def init_data():
     global log_path, time_start, serial_data
+    print("Initing data")
 
     log_path = create_new_save_folder()
     time_start = get_time_now()
-    serial_data = {"timestamps": [], "delta_times": [], "indices": [], "temperatures": []}
+    serial_data = {"timestamps": [12], "delta_times": [], "indices": [], "temperatures": []}
 
 init_data()
 
 
-def update_log():
+def update_log(serial_data):
     """
     Overwrites the log file with the latest serial_data in CSV format.
     Columns: index, timestamp, delta_times, temp1, temp2, temp3, temp4
     """
+
     try:
         # Open the log file in write mode (overwrites the file)
         with open(log_path, 'w', newline='') as log_file:
@@ -102,11 +104,11 @@ def format_microseconds_to_human(microseconds):
 
 
 
-def get_last_60_seconds():
+def get_last_60_seconds(serial_data):
     """Returns the last 60 seconds of data from serial_data."""
-    global serial_data
 
     if not serial_data["delta_times"]:
+        print("no delta times uwu", serial_data)
         return None
 
     # Find the cutoff delta_time (most recent - 60 seconds)
@@ -133,7 +135,7 @@ def get_last_60_seconds():
 
 def read_serial_data():
     """Reads and parses serial data."""
-    global serial_data
+    #global serial_data
     try:
         print("Reading serial")
         ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
@@ -161,11 +163,11 @@ def read_serial_data():
                             serial_data["delta_times"].append(delta_time)
 
                             print(f"Temps: {temperatures}", "len", len(serial_data["indices"]))
-                            update_log()
+                            update_log(serial_data)
                     except Exception as e:
                         print("Error reading serial: ", e)
             else:
-                time.sleep(0.02)
+                time.sleep(0.2)
 
     except Exception as e:
         print(f"Error reading serial: {e}")
@@ -215,13 +217,15 @@ n_clicks_old = 0
 )
 def update_content(n_clicks, n_intervals, current_data):
     """Handles both clearing the data on button press and updating the graph/table."""
-    global serial_data, n_clicks_old
+    global n_clicks_old, serial_data
+
+    print("len serial", serial_data)
 
     if n_clicks != n_clicks_old:
         n_clicks_old = n_clicks
         init_data() # restart data
 
-    serial_data_graph = get_last_60_seconds()
+    serial_data_graph = get_last_60_seconds(serial_data)
 
     if serial_data_graph is None:
         # Placeholder for empty data
@@ -252,7 +256,7 @@ def update_content(n_clicks, n_intervals, current_data):
             figure.update_layout(
                 yaxis=dict(range=[15, 60])  # Set fixed range from 15 to 60
             )
-
+        
         temps = ",  ".join([str(temp) for temp in serial_data["temperatures"][-1] ])
         figure.update_layout(
             title={
