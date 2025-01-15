@@ -38,7 +38,10 @@ def create_new_save_folder():
     # Create an empty log file if it doesn't exist
     if not os.path.exists(file_path):
         with open(file_path, 'w') as log_file:
-            log_file.write("")  # Create an empty file
+            writer = csv.writer(log_file, delimiter=";")
+            # Write the CSV header
+            header = ["index", "timestamp", "delta_times", "temp1", "temp2", "temp3", "temp4"]
+            writer.writerow(header)
     
     return file_path
 
@@ -62,32 +65,28 @@ def update_log(serial_data):
 
     try:
         # Open the log file in write mode (overwrites the file)
-        with open(log_path, 'w', newline='') as log_file:
+        with open(log_path, 'a', newline='') as log_file:
             writer = csv.writer(log_file, delimiter=";")
             
-            # Write the CSV header
-            header = ["index", "timestamp", "delta_times", "temp1", "temp2", "temp3", "temp4"]
-            writer.writerow(header)
-            
-            # Write each row of serial_data
-            for idx, time, delta_time, temps in zip(
-                serial_data["indices"],
-                serial_data["timestamps"],
-                serial_data["delta_times"],
-                serial_data["temperatures"]
-            ):
-                # Ensure temps has 4 values (fill with None if fewer)
-                temps = temps + [None] * (4 - len(temps))
-                # Write the row
-                writer.writerow([
-                    idx,
-                    format_microseconds_to_human(time),
-                    delta_time,
-                    temps[0],
-                    temps[1],
-                    temps[2],
-                    temps[3]
-                ])
+            # Write row of serial_data
+            idx = serial_data["indices"][-1]
+            time = serial_data["timestamps"][-1]
+            delta_time = serial_data["delta_times"][-1]
+            temps =  serial_data["temperatures"][-1]
+
+            # Ensure temps has 4 values (fill with None if fewer)
+            temps = temps + [None] * (4 - len(temps))
+            # Write the row
+            writer.writerow([
+                idx,
+                format_microseconds_to_human(time),
+                delta_time,
+                temps[0],
+                temps[1],
+                temps[2],
+                temps[3]
+            ])
+
     except Exception as e:
         print(f"Error writing to log file: {e}")
 
